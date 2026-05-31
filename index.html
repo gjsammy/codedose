@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CodeDose">
+<title>CodeDose — Peds Emergency Labels</title>
+<base href="/codedose/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F5F5F0;--surface:#FFFFFF;--border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.15);
+  --text:#1A1A18;--muted:#6B6B66;--faint:#A8A8A3;
+  --font-sans:'DM Sans',sans-serif;--font-mono:'DM Mono',monospace;
+}
+html,body{font-family:var(--font-sans);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
+
+/* topbar — stacks on mobile, single row on tablet/desktop */
+.topbar{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;flex-wrap:wrap;gap:8px;z-index:50;padding:10px 16px;}
+.tb-brand{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.tb-logo{width:30px;height:30px;border-radius:8px;background:var(--text);display:flex;align-items:center;justify-content:center;}
+.tb-logo svg{width:16px;height:16px;}
+.tb-name{font-size:14px;font-weight:600;letter-spacing:-0.02em;}
+.tb-name span{font-weight:400;color:var(--muted);}
+.tb-div{width:1px;height:24px;background:var(--border);flex-shrink:0;}
+.tg{display:flex;flex-direction:column;gap:2px;}
+.tg label{font-size:9px;font-weight:500;color:var(--faint);text-transform:uppercase;letter-spacing:0.08em;}
+.tg select,.tg input{font-family:var(--font-sans);font-size:13px;font-weight:500;padding:5px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text);outline:none;appearance:none;}
+.tg select{width:160px;cursor:pointer;}
+.tg input{width:80px;}
+.tg select:focus,.tg input:focus{border-color:var(--text);box-shadow:0 0 0 2px rgba(26,26,24,0.08);}
+.tb-or{font-size:11px;color:var(--faint);flex-shrink:0;}
+.wt-pill{display:flex;align-items:baseline;gap:3px;background:var(--bg);border:1px solid var(--border2);border-radius:10px;padding:5px 12px;min-width:70px;flex-shrink:0;}
+.wt-num{font-family:var(--font-mono);font-size:18px;font-weight:500;}
+.wt-unit{font-size:11px;color:var(--muted);margin-left:2px;}
+.wt-dash{font-size:14px;color:var(--faint);}
+.tb-spacer{flex:1;}
+@media(max-width:600px){.tb-div{display:none;}}
+.queue-btn:disabled 
+/* body */
+.body{padding:16px 16px 48px;}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;}
+
+/* cards */
+.card{border-radius:12px;padding:10px 11px 9px;cursor:pointer;position:relative;display:flex;flex-direction:column;gap:2px;min-height:96px;border:1.5px solid transparent;transition:transform 0.1s;user-select:none;-webkit-user-select:none;}
+.card:active{transform:scale(0.96);}
+.card.queued{border-color:rgba(0,0,0,0.3);}
+.c-qty{position:absolute;top:8px;right:8px;font-family:var(--font-mono);font-size:10px;font-weight:500;background:rgba(0,0,0,0.45);color:white;border-radius:8px;padding:1px 7px;}
+.c-name{font-size:14px;font-weight:600;line-height:1.3;}
+.c-conc{font-size:9.5px;opacity:0.6;margin-top:1px;}
+.c-formula{font-size:9.5px;opacity:0.55;}
+.c-dose{font-family:var(--font-mono);font-size:20px;font-weight:600;margin-top:5px;line-height:1;}
+.c-dose-unit{font-size:11px;font-weight:400;opacity:0.65;}
+.c-ml{font-size:13px;font-weight:600;opacity:0.85;margin-top:2px;}
+.c-no-wt{font-size:11px;opacity:0.35;margin-top:5px;}
+
+.card{background:var(--surface);}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-end;justify-content:center;z-index:100;padding-bottom:env(safe-area-inset-bottom);}@media(min-width:600px){.overlay{align-items:center;}}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:22px 24px 32px;width:100%;display:flex;flex-direction:column;gap:14px;}@media(min-width:600px){.modal{border-radius:20px;width:320px;padding:22px 24px;}}
+
+.m-name{font-size:16px;font-weight:600;line-height:1.3;}
+
+
+.m-sep{height:1px;background:var(--border);}
+.m-calc{background:var(--bg);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;}
+.m-calc-row{display:flex;justify-content:space-between;align-items:baseline;}
+.m-calc-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;}
+.m-calc-val{font-family:var(--font-mono);font-size:16px;font-weight:500;}
+.m-calc-unit{font-size:11px;color:var(--muted);}
+.m-no-wt{font-size:12px;color:var(--faint);text-align:center;padding:4px 0;}
+.m-qlabel{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;}
+.m-qrow{display:flex;gap:7px;}
+.qb{width:44px;height:44px;border-radius:10px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:16px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.1s;}
+.qb:hover{background:#EDEDEA;}
+.qb.on{background:var(--text);color:white;border-color:var(--text);}
+.qb.del{border-color:#E24B4A;background:#FCEBEB;color:#501313;}
+.qb.del.on{background:#E24B4A;color:white;}
+.m-actions{display:flex;gap:8px;}
+.m-cancel{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2);background:var(--bg);font-family:var(--font-sans);font-size:13px;font-weight:500;color:var(--text);cursor:pointer;}
+.m-cancel:hover{background:#EDEDEA;}
+.m-confirm{flex:2;padding:11px;border-radius:10px;border:none;background:var(--text);color:white;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+.m-confirm:hover{opacity:0.85;}
+
+/* preview modal */
+.prev-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);}
+.prev-modal{background:var(--surface);border-radius:20px;padding:24px;width:540px;max-height:82vh;display:flex;flex-direction:column;gap:16px;box-shadow:0 24px 80px rgba(0,0,0,0.25);}
+.prev-header{display:flex;justify-content:space-between;align-items:flex-start;}
+.prev-title{font-size:16px;font-weight:600;}
+.prev-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.prev-close{width:32px;height:32px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.prev-grid{display:flex;flex-wrap:wrap;gap:8px;overflow-y:auto;padding:2px;}
+
+/* label preview card — proportional to 50×30mm */
+.lp{width:189px;height:113px;border-radius:6px;border:1px solid var(--border2);display:flex;flex-direction:row;background:white;flex-shrink:0;overflow:hidden;position:relative;}
+.lp::after{content:'';position:absolute;left:50%;top:0;bottom:0;border-left:1.5px dashed #ccc;pointer-events:none;}
+.lp-half{width:94px;height:113px;padding:7px 5px 7px 13px;display:flex;flex-direction:column;gap:0;position:relative;flex-shrink:0;}
+.lp-stripe{position:absolute;left:0;top:0;bottom:0;width:5px;}
+.lp-name{font-size:12px;font-weight:700;line-height:1.2;color:#111;}
+.lp-conc{font-size:7px;color:#666;margin-top:1px;}
+.lp-div{height:1px;background:#e8e8e8;margin:4px 0;}
+.lp-dose-row{display:flex;align-items:baseline;gap:2px;}
+.lp-dose{font-family:var(--font-mono);font-size:13px;font-weight:700;color:#111;line-height:1;}
+.lp-du{font-size:9px;color:#555;}
+.lp-ml{font-size:13px;font-weight:700;color:#222;line-height:1;margin-top:2px;}
+.lp-note{font-size:6.5px;color:#888;margin-top:auto;line-height:1.3;}
+.lp-wt{font-size:6px;color:#bbb;margin-top:2px;}
+.lp-copy{font-size:7.5px;color:#bbb;position:absolute;top:5px;right:6px;}
+
+.prev-actions{display:flex;gap:10px;padding-top:4px;}
+.prev-back{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2);background:var(--bg);font-family:var(--font-sans);font-size:13px;font-weight:500;color:var(--text);cursor:pointer;}
+.prev-back:hover{background:#EDEDEA;}
+.prev-print{flex:2;padding:11px;border-radius:10px;border:none;background:var(--text);color:white;font-family:var(--font-sans);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;}
+.prev-print:hover{opacity:0.85;}
+
+/* print */
+@media print{
+  @page{size:50mm 30mm;margin:0;}
+  html,body{overflow:visible!important;height:auto!important;background:white;}
+  .topbar,.body,.overlay,.prev-overlay{display:none!important;}
+  .print-sheet{display:block!important;}
+  .print-label{width:50mm;height:30mm;page-break-after:always;display:flex;flex-direction:row;background:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;position:relative;overflow:hidden;}
+  .print-label:last-child{page-break-after:avoid;}
+  .print-label::after{content:'';position:absolute;left:25mm;top:0;bottom:0;border-left:0.4mm dashed #bbb;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .pl-half{width:25mm;height:30mm;padding:2mm 2mm 2mm 4.5mm;display:flex;flex-direction:column;position:relative;flex-shrink:0;}
+  .pl-stripe{position:absolute;left:0;top:0;bottom:0;width:2.5mm;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .pl-name{font-size:9pt;font-weight:700;line-height:1.2;color:black;font-family:'DM Sans',sans-serif;}
+  .pl-conc{font-size:5pt;color:#555;margin-top:.3mm;font-family:'DM Sans',sans-serif;}
+  .pl-div{height:.3mm;background:#ddd;margin:.8mm 0;}
+  .pl-dose{font-size:11pt;font-weight:700;color:black;line-height:1;font-family:'DM Mono',monospace;}
+  .pl-du{font-size:7pt;color:#333;font-family:'DM Sans',sans-serif;}
+  .pl-ml{font-size:11pt;font-weight:700;color:#111;line-height:1;margin-top:.3mm;font-family:'DM Mono',monospace;}
+  .pl-note{font-size:5pt;color:#777;margin-top:auto;line-height:1.25;font-family:'DM Sans',sans-serif;}
+  .pl-wt{font-size:4.5pt;color:#bbb;margin-top:.5mm;font-family:'DM Sans',sans-serif;}
+}
+.print-sheet{display:none;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-brand">
+    <div class="tb-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+    </div>
+    <div class="tb-name">Code<span>Dose</span></div>
+  </div>
+  <div class="tb-div"></div>
+  <div class="tg">
+    <label>Patient</label>
+    <select id="patSel" onchange="onPat()">
+      <option value="">— select patient —</option>
+      <option value="3">Newborn — 3 kg</option>
+      <option value="5">Infant — 5 kg</option>
+      <option value="8">Infant — 8 kg</option>
+      <option value="12">Toddler — 12 kg</option>
+      <option value="18">Child — 18 kg</option>
+      <option value="25">Child — 25 kg</option>
+      <option value="35">Child — 35 kg</option>
+      <option value="50">Adolescent — 50 kg</option>
+    </select>
+  </div>
+  <div class="tb-or">or</div>
+  <div class="tg">
+    <label>Dosing weight</label>
+    <input type="number" id="wtIn" min="1" max="100" step="0.1" placeholder="kg" oninput="onWt()">
+  </div>
+  <div class="wt-pill" id="wtPill"><span class="wt-dash">—</span></div>
+  <div class="tb-spacer"></div>
+</div>
+
+<div class="body"><div id="drugGrid"></div></div>
+
+<!-- drug modal -->
+<div class="overlay" id="overlay" style="display:none" onclick="bgClose(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="m-name" id="mName"></div>
+    <div class="m-sep"></div>
+    <div class="m-calc" id="mCalc"></div>
+    <div class="m-sep"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="m-qlabel">Copies to print</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="qb" onclick="setSQ(Math.max(0,selQty-1))" style="width:36px;height:36px;font-size:20px;line-height:1;" id="qDown">−</button>
+        <span id="mQDisplay" style="font-family:var(--font-mono);font-size:22px;font-weight:600;min-width:28px;text-align:center;color:var(--text);">3</span>
+        <button class="qb" onclick="setSQ(selQty+1)" style="width:36px;height:36px;font-size:20px;line-height:1;" id="qUp">+</button>
+      </div>
+    </div>
+    <div class="m-actions">
+      <button class="m-cancel" onclick="closeModal()">Cancel</button>
+      <button class="m-confirm" onclick="confirmAdd()"><span id="mConfirmTxt">Print</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- preview modal -->
+<div class="prev-overlay" id="prevOverlay" style="display:none" onclick="prevBgClose(event)">
+  <div class="prev-modal" onclick="event.stopPropagation()">
+    <div class="prev-header">
+      <div>
+        <div class="prev-title">Label Preview</div>
+        <div class="prev-sub" id="prevSub"></div>
+      </div>
+      <button class="prev-close" onclick="closePreview()">✕</button>
+    </div>
+    <div class="prev-grid" id="prevGrid"></div>
+    <div class="prev-actions">
+      <button class="prev-back" onclick="closePreview()">← Edit queue</button>
+      <button class="prev-print" onclick="doPrint()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
+        Print to NIIMBOT
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="print-sheet" id="printSheet"></div>
+
+<script>
+const DRUGS=[
+  {n:"Adenosine",           c:"3 mg/mL",        cv:3,     d:0.1,  u:"mg/kg",    vol:false},
+  {n:"Amiodarone (Pulseless)", c:"50 mg/mL",     cv:50,    d:5,    u:"mg/kg",    vol:false},
+  {n:"Amiodarone (with pulse)", c:"1.5 mg/mL",   cv:1.5,   d:5,    u:"mg/kg",    vol:false},
+  {n:"Atropine",            c:"0.1 mg/mL",       cv:0.1,   d:0.02, u:"mg/kg",    vol:false},
+  {n:"Calcium Chloride 10%",c:"100 mg/mL",       cv:100,   d:20,   u:"mg/kg",    vol:false},
+  {n:"Calcium Gluconate 10%",c:"100 mg/mL",      cv:100,   d:100,  u:"mg/kg",    vol:false},
+  {n:"Dantrolene",          c:"50 mg/mL",        cv:50,    d:2.5,  u:"mg/kg",    vol:false},
+  {n:"Dextrose 10%",        c:"0.1 gm/mL",       cv:1,     d:5,    u:"mL/kg",    vol:true},
+  {n:"Dextrose 50%",        c:"0.5 gm/mL",       cv:1,     d:1,    u:"mL/kg",    vol:true},
+  {n:"DiazePAM",            c:"5 mg/mL",         cv:5,     d:0.2,  u:"mg/kg",    vol:false},
+  {n:"Epinephrine CODE",    c:"0.1 mg/mL",       cv:0.1,   d:0.01, u:"mg/kg",    vol:false},
+  {n:"Epinephrine ETT Code",c:"1 mg/mL",         cv:1,     d:0.1,  u:"mg/kg",    vol:false},
+  {n:"Epinephrine IM Anaphylaxis", c:"1 mg/mL",  cv:1,     d:0.01, u:"mg/kg",    vol:false},
+  {n:"Epinephrine Ultralow",c:"10 mcg/mL",       cv:10,    d:1,    u:"mcg/kg",   vol:false},
+  {n:"Etomidate",           c:"2 mg/mL",         cv:2,     d:0.3,  u:"mg/kg",    vol:false},
+  {n:"FentaNYL",            c:"50 mcg/mL",       cv:50,    d:2,    u:"mcg/kg",   vol:false},
+  {n:"Flumazenil",          c:"0.1 mg/mL",       cv:0.1,   d:0.01, u:"mg/kg",    vol:false},
+  {n:"Fosphenytoin IV",     c:"50 mgPE/mL",      cv:50,    d:20,   u:"mgPE/kg",  vol:false},
+  {n:"Insulin regular",     c:"1 unit/mL",       cv:1,     d:0.1,  u:"units/kg", vol:false},
+  {n:"Ketamine",            c:"10 mg/mL",        cv:10,    d:1,    u:"mg/kg",    vol:false},
+  {n:"Lidocaine 2%",        c:"20 mg/mL",        cv:20,    d:1,    u:"mg/kg",    vol:false},
+  {n:"Magnesium Sulfate",   c:"500 mg/mL",       cv:500,   d:50,   u:"mg/kg",    vol:false},
+  {n:"Mannitol 25%",        c:"0.25 gm/mL",      cv:0.25,  d:0.5,  u:"gm/kg",    vol:false},
+  {n:"Midazolam (IV)",      c:"1 mg/mL",         cv:1,     d:0.1,  u:"mg/kg",    vol:false},
+  {n:"Midazolam (IM/Intranasal)", c:"5 mg/mL",   cv:5,     d:0.2,  u:"mg/kg",    vol:false},
+  {n:"Naloxone",            c:"0.4 mg/mL",       cv:0.4,   d:0.1,  u:"mg/kg",    vol:false},
+  {n:"Phenylephrine",       c:"100 mcg/mL",      cv:100,   d:10,   u:"mcg/kg",   vol:false},
+  {n:"Propofol",            c:"10 mg/mL",        cv:10,    d:1,    u:"mg/kg",    vol:false},
+  {n:"Rocuronium",          c:"10 mg/mL",        cv:10,    d:1,    u:"mg/kg",    vol:false},
+  {n:"Sodium Bicarbonate 4.2%", c:"0.5 mEq/mL",  cv:0.5,   d:1,    u:"mEq/kg",   vol:false},
+  {n:"Sodium Bicarbonate 8.4%", c:"1 mEq/mL",    cv:1,     d:1,    u:"mEq/kg",   vol:false},
+  {n:"Succinylcholine",     c:"20 mg/mL",        cv:20,    d:2,    u:"mg/kg",    vol:false},
+  {n:"VECuronium",          c:"1 mg/mL",         cv:1,     d:0.1,  u:"mg/kg",    vol:false},
+];
+
+let wt=null,queue={},activeIdx=null,selQty=3;
+
+function calcDose(d,w){
+  if(!w)return null;
+  return d.d*w;
+}
+function calcVol(d,dose){
+  if(dose===null)return null;
+  if(d.vol)return dose; // mL/kg drug — dose IS the volume
+  return dose/d.cv;
+}
+function fmt(n){
+  if(n===null||n===undefined)return'—';
+  if(n>=100)return Math.round(n)+'';
+  if(n>=10)return parseFloat(n.toFixed(1))+'';
+  return parseFloat(n.toFixed(2))+'';
+}
+function ul(u){return u.split('/')[0];}
+
+function renderGrid(){
+  const g=document.getElementById('drugGrid');
+  let h='';
+  h+='<div class="grid">';
+  DRUGS.forEach((d,i)=>{
+    const dv=calcDose(d,wt),vol=calcVol(d,dv),q=queue[i]||0;
+    h+=`<div class="card${q>0?' queued':''}" onclick="openModal(${i})">
+      <div class="c-name">${d.n}</div>
+      <div class="c-conc">${d.c}</div>
+      <div class="c-formula">${d.d} ${d.u}</div>
+      ${wt?`<div class="c-dose">${fmt(dv)}<span class="c-dose-unit"> ${ul(d.u)}</span></div><div class="c-ml">= ${fmt(vol)} mL</div>`:`<div class="c-no-wt">Enter weight</div>`}
+    </div>`;
+  });
+  h+='</div>';
+  g.innerHTML=h;
+  const total=Object.values(queue).reduce((a,b)=>a+b,0);
+}
+
+function onPat(){
+  const v=document.getElementById('patSel').value;
+  if(v){document.getElementById('wtIn').value='';wt=parseFloat(v);}else wt=null;
+  updatePill();renderGrid();
+}
+function onWt(){
+  const v=parseFloat(document.getElementById('wtIn').value);
+  if(v>0&&v<=150){document.getElementById('patSel').value='';wt=v;}
+  else if(!document.getElementById('wtIn').value)wt=null;
+  updatePill();renderGrid();
+}
+function updatePill(){
+  const p=document.getElementById('wtPill');
+  p.innerHTML=wt?`<span class="wt-num">${wt}</span><span class="wt-unit">kg</span>`:`<span class="wt-dash">—</span>`;
+}
+
+function openModal(i){
+  activeIdx=i;selQty=queue[i]||3;
+  const d=DRUGS[i];
+  const dv=calcDose(d,wt),vol=calcVol(d,dv);
+  document.getElementById('mName').textContent=d.n;
+  const c=document.getElementById('mCalc');
+  c.innerHTML=wt&&dv!==null
+    ?`<div class="m-calc-row"><span class="m-calc-label">Dose</span><span><span class="m-calc-val">${fmt(dv)}</span> <span class="m-calc-unit">${ul(d.u)}</span></span></div>
+      <div class="m-calc-row" style="margin-top:4px"><span class="m-calc-label">Volume</span><span><span class="m-calc-val">${fmt(vol)}</span> <span class="m-calc-unit">mL</span></span></div>
+      <div style="font-size:10px;color:var(--faint);margin-top:6px">${d.c}</div>`
+    :`<div class="m-no-wt">Enter patient weight to see calculated dose</div>`;
+  buildQRow();
+  document.getElementById('mConfirmTxt').textContent='Print';
+  document.getElementById('overlay').style.display='flex';
+}
+function buildQRow(){
+  document.getElementById('mQDisplay').textContent=selQty;
+  const downBtn=document.getElementById('qDown');
+  if(downBtn)downBtn.style.opacity=selQty<=0?'0.3':'1';
+}
+function setSQ(q){selQty=q;buildQRow();}
+function confirmAdd(){
+  if(activeIdx===null)return;
+  if(selQty===0)delete queue[activeIdx];
+  else queue[activeIdx]=selQty;
+  closeModal();
+  doPrint();
+  queue={};
+  renderGrid();
+}
+function closeModal(){document.getElementById('overlay').style.display='none';activeIdx=null;}
+function bgClose(e){if(e.target===document.getElementById('overlay'))closeModal();}
+
+function openPreview(){
+  const total=Object.values(queue).reduce((a,b)=>a+b,0);
+  if(total===0)return;
+  document.getElementById('prevSub').textContent=`${total} label${total!==1?'s':''} · ${wt?wt+' kg':'no weight entered'}`;
+  const pg=document.getElementById('prevGrid');
+  let h='';
+  Object.entries(queue).forEach(([idx,copies])=>{
+    const d=DRUGS[idx];
+    const dv=calcDose(d,wt),vol=calcVol(d,dv);
+    for(let c=0;c<copies;c++){
+      const halfHTML=`
+
+        <div class="lp-name">${d.n}</div>
+        <div class="lp-conc">${d.c}</div>
+        <div class="lp-div"></div>
+        <div class="lp-dose-row"><span class="lp-dose">${fmt(dv)}</span><span class="lp-du"> ${ul(d.u)}</span></div>
+        <div class="lp-dose-row" style="margin-top:2px"><span class="lp-ml">${vol!==null?fmt(vol):''}</span><span class="lp-du"> mL</span></div>
+        ${wt?`<div class="lp-wt">${wt} kg</div>`:''}`;
+      h+=`<div class="lp">
+        <div class="lp-half">${halfHTML}${copies>1?`<div class="lp-copy">${c+1}/${copies}</div>`:''}</div>
+        <div class="lp-half">${halfHTML}</div>
+      </div>`;
+    }
+  });
+  pg.innerHTML=h;
+  document.getElementById('prevOverlay').style.display='flex';
+}
+function closePreview(){document.getElementById('prevOverlay').style.display='none';}
+function prevBgClose(e){if(e.target===document.getElementById('prevOverlay'))closePreview();}
+
+function doPrint(){
+  const sheet=document.getElementById('printSheet');
+  let h='';
+  Object.entries(queue).forEach(([idx,copies])=>{
+    const d=DRUGS[idx];
+    const dv=calcDose(d,wt),vol=calcVol(d,dv);
+    for(let c=0;c<copies;c++){
+      const ph=`
+
+        <div class="pl-name">${d.n}</div>
+        <div class="pl-conc">${d.c}</div>
+        <div class="pl-div"></div>
+        <div><span class="pl-dose">${fmt(dv)}</span> <span class="pl-du">${ul(d.u)}</span></div>
+        <div style="margin-top:.3mm"><span class="pl-ml">${vol!==null?fmt(vol):''}</span> <span class="pl-du">mL</span></div>
+        ${wt?`<div class="pl-wt">${wt} kg</div>`:''}`;
+      h+=`<div class="print-label">
+        <div class="pl-half">${ph}</div>
+        <div class="pl-half">${ph}</div>
+      </div>`;
+    }
+  });
+  sheet.innerHTML=h;
+  window.print();
+}
+
+renderGrid();
+
+</script>
+</body>
+</html>
